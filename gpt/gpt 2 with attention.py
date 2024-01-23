@@ -101,7 +101,7 @@ class MultiHeadAttention(nn.Module):
         return torch.cat([h(x) for h in self.heads], dim=-1)
 
 
-class BigramLanguageModel(nn.Module):
+class GPTLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
         # convert integers to embeddings
@@ -149,7 +149,7 @@ class BigramLanguageModel(nn.Module):
 
 if __name__ == "__main__":
     # ===== instantiate model =====
-    model = BigramLanguageModel()
+    model = GPTLanguageModel()
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
 
     # ===== sample generation before training =====
