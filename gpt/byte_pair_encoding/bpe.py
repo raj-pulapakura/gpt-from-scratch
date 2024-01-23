@@ -1,5 +1,5 @@
 # Don't run this file unless you want to create a new tokenizer
-# The the tokenizer has already been trained with 10000 merges, which took around 10 minutes
+# The tokenizer has already been trained with 10000 merges, which took around 10 minutes
 # If you want to see how to load the trained tokenizer, go to test.py
 
 import json
@@ -19,6 +19,9 @@ class BPETokenizer:
     @property
     def vocab(self):
         return self._vocab
+    @property
+    def vocab_size(self):
+        return len(self._vocab)
     @property
     def merges(self):
         return self._merges
@@ -131,7 +134,7 @@ class BPETokenizer:
 
         self._has_trained = True
 
-    def tokenize(self, s: str) -> list[int]:
+    def tokenize(self, s: str, verbose=False) -> list[int]:
         """convert string into list of integers using learned vocabulary"""
         if not self._has_trained:
             raise Exception("You have not trained yet.")
@@ -140,7 +143,8 @@ class BPETokenizer:
         # split list of words into list of lists of chars
         char_splits = self._get_char_splits(words)
         # go through each merge rule, and merge matching pairs
-        for merge in self._merges:
+        for i, merge in enumerate(self._merges):
+            if verbose: print(f"({i}) {merge}")
             token = "".join(merge)
             for cs in char_splits:
                 i = 0
@@ -195,11 +199,12 @@ if __name__ == "__main__":
     print("✅ Loaded corpus.")
     print(f"Number of chars: {len(corpus)}")
     print(f"Approx. number of words: {len(corpus.split(' '))}")
+    print(f"Approx. number of unique words: {len(set(corpus.split(' ')))}")
 
     # train tokenizer
     tokenizer = BPETokenizer()
     print("\n🥷 Training tokenizer:\n")
-    tokenizer.train(corpus, num_merges=10000, verbose=True)
+    tokenizer.train(corpus, num_merges=1000, verbose=True)
 
     # save tokenizer vocab and merge rules to json
     print("\n🚀 Saving tokenizer")
