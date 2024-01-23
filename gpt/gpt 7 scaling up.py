@@ -195,12 +195,12 @@ class GPTLanguageModel(nn.Module):
 if __name__ == "__main__":
     # ===== instantiate model =====
     model = GPTLanguageModel()
-    model.to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
+    m = model.to(device)
+    optimizer = torch.optim.AdamW(m.parameters(), lr=LR)
 
     # ===== sample generation before training =====
-    inputs = torch.zeros((1, 1), dtype=torch.long)
-    generation = model.generate(inputs, max_new_tokens=100)
+    inputs = torch.zeros((1, 1), dtype=torch.long, device=device)
+    generation = m.generate(inputs, max_new_tokens=100)
     print("Sample generation before training")
     print("---------------------------------")
     print(decode(generation.squeeze().tolist()))
@@ -212,7 +212,7 @@ if __name__ == "__main__":
         # get sample batch
         xb, yb = get_batch("train")
         # calculate loss
-        logits, loss = model(xb, yb)
+        logits, loss = m(xb, yb)
         # set gradients to zero
         optimizer.zero_grad(set_to_none=True)
         # calculate gradients
@@ -226,11 +226,11 @@ if __name__ == "__main__":
     # ===== estimate loss =====
     print("\nEstimated loss")
     print("--------------")
-    print(estimate_loss(model))
+    print(estimate_loss(m))
 
     # ===== sample generation after training =====
     inputs = torch.zeros((1, 1), dtype=torch.long, device=device)
-    generation = model.generate(inputs, max_new_tokens=200)
+    generation = m.generate(inputs, max_new_tokens=200)
     print("\nSample generation after training")
     print("--------------------------------")
     print("".join(decode(generation.squeeze().tolist())))
