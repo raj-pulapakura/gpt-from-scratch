@@ -29,8 +29,9 @@ def load_dataset():
 train_data, val_data, VOCAB_SIZE, encode, decode = load_dataset()
 BATCH_SIZE = 32
 CONTEXT_LEN = 8
-N_EMBED = 24
-HEAD_SIZE = 24
+N_EMBED = 32
+HEAD_SIZE = 128
+NUM_HEADS = 4 # must be a factor of HEAD_SIZE
 LR = 1e-3
 TRAIN_ITERS = 10000
 EVAL_ITERS = 200
@@ -65,14 +66,14 @@ def estimate_loss(model):
 # -----------------------------
 # ARCHITECTURE
 
-class Head(nn.Module):
+class AttentionHead(nn.Module):
     """one head of self attention"""
 
     def __init__(self):
         super().__init__()
-        self.query = nn.Linear(N_EMBED, HEAD_SIZE, bias=False)
-        self.key = nn.Linear(N_EMBED, HEAD_SIZE, bias=False)
-        self.value = nn.Linear(N_EMBED, HEAD_SIZE, bias=False)
+        self.query = nn.Linear(N_EMBED, HEAD_SIZE//NUM_HEADS, bias=False)
+        self.key = nn.Linear(N_EMBED, HEAD_SIZE//NUM_HEADS, bias=False)
+        self.value = nn.Linear(N_EMBED, HEAD_SIZE//NUM_HEADS, bias=False)
         self.register_buffer("tril", torch.tril(torch.ones(CONTEXT_LEN, CONTEXT_LEN)))
 
     def forward(self, x):
@@ -88,6 +89,18 @@ class Head(nn.Module):
         out = self_attention @ v # (B, T, T) @ (B, T, head_size) = (B, T, head_size)
         return out # (B, T, head_size)
 
+
+class MultiHeadAttention(nn.Module):
+    """multiple heads of self-attention"""
+
+    def __init__(self):
+        super().__init__()
+        self.heads = nn.ModuleList([AttentionHead() for _ in range(NUM_HEADS)])
+
+    def forward(self, x):
+        return torch.cat([h(x) for h in self.heads], dim=-1)
+
+
 class BigramLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -95,7 +108,7 @@ class BigramLanguageModel(nn.Module):
         self.token_embedding_table = nn.Embedding(VOCAB_SIZE, N_EMBED)
         # add positional embeddings to retain positional information
         self.position_embedding_table = nn.Embedding(CONTEXT_LEN, N_EMBED)
-        self.sa_head = Head()
+        self.sa_heads = MultiHeadAttention()
         self.lm_head = nn.Linear(HEAD_SIZE, VOCAB_SIZE)
 
     def forward(self, x, y=None):
@@ -104,7 +117,7 @@ class BigramLanguageModel(nn.Module):
         tok_emb = self.token_embedding_table(x) # (B, T, C)
         pos_emb = self.position_embedding_table(torch.arange(T)) # (T, C)
         x = tok_emb + pos_emb # (B, T, C), positional embeddings are broadcasted across batch
-        x = self.sa_head(x) # (B, T, head_size)
+        x = self.sa_heads(x) # (B, T, head_size)
         logits = self.lm_head(x) # (B, T, vocab_size)
 
         if y is None:
@@ -132,6 +145,7 @@ class BigramLanguageModel(nn.Module):
             # append sampled index to the running sequence
             x = torch.cat((x, idx_next), dim=1) # (B, T+1)
         return x
+
 
 if __name__ == "__main__":
     # ===== instantiate model =====
