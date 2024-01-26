@@ -1,3 +1,5 @@
+![techno chameleon](https://github.com/raj-pulapakura/gpt-from-scratch/assets/87762282/ba92a155-9580-404d-b723-4c4147ba2d9a)
+
 Andrej Karpathy has a wonderful series in which he builds out neural networks and language models from scratch, all the way up to implementing a Transformer! Check out [his playlist](
 https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ).
 
